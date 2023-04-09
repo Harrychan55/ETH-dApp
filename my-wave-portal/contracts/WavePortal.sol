@@ -21,24 +21,41 @@ contract WavePortal {
     * これで、ユーザーが送ってきたすべての「👋（wave）」を保持することができます。
     */
     Wave[] waves;
-    constructor() {
-        console.log("WavePortal - Smart Contract!");
+    
+    //payableを加えることで、コントラクトに送金機能を実装
+    constructor() payable {
+    console.log("We have been constructed!");
     }
+
     /*
     * _messageという文字列を要求するようにwave関数を更新。
     * _messageは、ユーザーがフロントエンドから送信するメッセージです。
     */
     function wave(string memory _message) public {
-        totalWaves += 1;
-        console.log("%s waved w/ message %s", msg.sender, _message);
-        /*
-         * 「👋（wave）」とメッセージを配列に格納。
-         */
-        waves.push(Wave(msg.sender, _message, block.timestamp));
-        /*
-         * コントラクト側でemitされたイベントに関する通知をフロントエンドで取得できるようにする。
-         */
-        emit NewWave(msg.sender, block.timestamp, _message);
+	totalWaves += 1;
+	console.log("%s waved w/ message %s", msg.sender, _message);
+	/*
+	* 「👋（wave）」とメッセージを配列に格納。
+	*/
+	waves.push(Wave(msg.sender, _message, block.timestamp));
+	/*
+	* コントラクト側でemitされたイベントに関する通知をフロントエンドで取得できるようにする。
+	*/
+	emit NewWave(msg.sender, block.timestamp, _message);
+	/*
+	* 「👋（wave）」を送ってくれたユーザーに0.0001ETHを送る
+	*/
+	uint256 prizeAmount = 0.0001 ether;
+    //requireは、何らかの条件がtrueもしくはfalseであることを確認するif文のような役割を果たします。 
+    //もしrequireの結果がfalseの場合（＝コントラクトが持つ資金が足りない場合）は、トランザクションをキャンセルします。
+	require(
+		prizeAmount <= address(this).balance,
+		"Trying to withdraw more money than the contract has."
+	);
+    //ユーザーに送金
+	(bool success, ) = (msg.sender).call{value: prizeAmount}("");
+    //送金が成功を確認
+	require(success, "Failed to withdraw money from contract.");
     }
     /*
      * 構造体配列のwavesを返してくれるgetAllWavesという関数を追加。
